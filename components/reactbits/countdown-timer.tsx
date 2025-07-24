@@ -63,7 +63,7 @@ export function CountdownTimer({ targetDate, className = "" }: CountdownTimerPro
                 exit={{ y: -20, opacity: 0 }}
                 transition={{ duration: 0.3 }}
                 className="text-3xl sm:text-4xl md:text-6xl lg:text-8xl font-bold tracking-tighter"
-                style={{ fontFamily: 'serif' }}
+                style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif', fontWeight: 'bold' }}
               >
                 {unit.value.toString().padStart(2, '0')}
               </motion.div>

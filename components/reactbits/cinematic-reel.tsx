@@ -9,12 +9,12 @@ interface CinematicReelProps {
 }
 
 const reelImages = [
-  "/reel/biden1.jpg",
-  "/reel/biden2.jpg", 
-  "/reel/celeberty1.jpg",
-  "/reel/biden1.jpg", // Repeat for more dramatic effect
-  "/reel/celeberty1.jpg",
-  "/reel/biden2.jpg",
+  "/reel/image1.jpeg",
+  "/reel/image2.jpeg",
+  "/reel/image3.jpeg",
+  "/reel/image4.jpeg",
+  "/reel/image5.jpeg",
+  "/reel/image6.jpeg",
 ];
 
 export function CinematicReel({ className = "" }: CinematicReelProps) {

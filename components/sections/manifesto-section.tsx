@@ -66,7 +66,7 @@ export function ManifestoSection() {
             transition={{ duration: 1 }}
             viewport={{ once: true }}
             className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-bold tracking-tighter text-white mb-8 sm:mb-12 md:mb-16 lg:mb-20"
-            style={{ fontFamily: 'serif' }}
+            style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif', fontWeight: 'bold' }}
           >
             MANIFESTO
           </motion.h2>
@@ -81,7 +81,7 @@ export function ManifestoSection() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   className="text-lg sm:text-xl md:text-2xl lg:text-4xl xl:text-5xl text-white leading-tight mb-4 sm:mb-6 md:mb-8 px-2"
-                  style={{ fontFamily: 'serif' }}
+                  style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif', fontWeight: 'normal' }}
                 >
                   {displayedText}
                   <motion.span

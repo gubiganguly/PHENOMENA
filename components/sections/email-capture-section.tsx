@@ -59,7 +59,7 @@ export function EmailCaptureSection() {
           viewport={{ once: true }}
           className="text-center"
         >
-          <h2 className="text-6xl md:text-8xl font-bold tracking-tighter text-white mb-8" style={{ fontFamily: 'serif' }}>
+          <h2 className="text-6xl md:text-8xl font-bold tracking-tighter text-white mb-8" style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif', fontWeight: 'bold' }}>
             JOIN THE ELITE
           </h2>
           <p className="text-xl text-white/60 mb-16 max-w-2xl mx-auto leading-relaxed">

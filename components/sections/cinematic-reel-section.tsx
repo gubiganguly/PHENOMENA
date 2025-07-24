@@ -32,7 +32,7 @@ export function CinematicReelSection() {
           viewport={{ once: true }}
           className="text-center mb-0 sm:mb-4 md:mb-6 lg:mb-8 px-4 flex-shrink-0"
         >
-          <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-bold tracking-tighter text-white" style={{ fontFamily: 'serif' }}>
+          <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-bold tracking-tighter text-white" style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif', fontWeight: 'bold' }}>
             THE REEL
           </h2>
         </motion.div>

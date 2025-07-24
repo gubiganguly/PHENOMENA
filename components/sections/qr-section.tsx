@@ -13,10 +13,10 @@ export function QRSection() {
           viewport={{ once: true }}
           className="text-center max-w-4xl mx-auto"
         >
-          <h2 className="text-6xl md:text-8xl font-bold tracking-tighter text-white mb-8" style={{ fontFamily: 'serif' }}>
+          <h2 className="text-6xl md:text-8xl font-bold tracking-tighter text-white mb-8" style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif', fontWeight: 'bold' }}>
             ACCESS.
           </h2>
-          <h2 className="text-6xl md:text-8xl font-bold tracking-tighter text-white mb-16" style={{ fontFamily: 'serif' }}>
+          <h2 className="text-6xl md:text-8xl font-bold tracking-tighter text-white mb-16" style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif', fontWeight: 'bold' }}>
             UNLOCKED.
           </h2>
 

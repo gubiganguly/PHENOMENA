@@ -67,7 +67,7 @@ export function PressSection() {
           viewport={{ once: true }}
           className="text-center mb-10 sm:mb-12 md:mb-16 lg:mb-20"
         >
-          <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-bold tracking-tighter text-white mb-4 sm:mb-6 md:mb-8" style={{ fontFamily: 'serif' }}>
+          <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-bold tracking-tighter text-white mb-4 sm:mb-6 md:mb-8" style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif', fontWeight: 'bold' }}>
             IN THE PRESS
           </h2>
           <div className="w-16 sm:w-20 md:w-24 h-px bg-white/60 mx-auto"></div>
