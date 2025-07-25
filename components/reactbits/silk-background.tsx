@@ -33,6 +33,45 @@ const hasWebGLSupport = () => {
   }
 };
 
+// CSS Fallback component
+const CSSFallback: React.FC<{ color: string; children?: React.ReactNode; className?: string }> = ({ 
+  color, 
+  children, 
+  className = "" 
+}) => {
+  return (
+    <div 
+      className={`relative ${className}`}
+      style={{
+        width: '100%',
+        height: '100%',
+        minHeight: 'inherit',
+        background: `linear-gradient(45deg, ${color}, ${color}dd)`,
+        backgroundSize: '20px 20px',
+        animation: 'silkFallback 10s ease-in-out infinite',
+      }}
+    >
+      <style jsx>{`
+        @keyframes silkFallback {
+          0%, 100% { 
+            background-position: 0% 0%;
+            filter: brightness(0.8);
+          }
+          50% { 
+            background-position: 100% 100%;
+            filter: brightness(1.2);
+          }
+        }
+      `}</style>
+      {children && (
+        <div className="relative" style={{ zIndex: 10 }}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+};
+
 interface UniformValue<T = number | Color> {
   value: T;
 }
@@ -141,48 +180,55 @@ const SilkPlane = forwardRef<Mesh, SilkPlaneProps>(function SilkPlane(
   ref
 ) {
   const { viewport } = useThree();
-  const [shaderError, setShaderError] = useState(false);
 
   useLayoutEffect(() => {
+    console.log('SilkPlane: Created with mobile:', isMobile, 'viewport:', viewport.width, 'x', viewport.height);
     const mesh = ref as React.MutableRefObject<Mesh | null>;
     if (mesh.current) {
-      mesh.current.scale.set(viewport.width, viewport.height, 1);
+      try {
+        mesh.current.scale.set(viewport.width, viewport.height, 1);
+        console.log('SilkPlane: Mesh scaled to:', viewport.width, viewport.height);
+      } catch (error) {
+        console.error('SilkPlane: Error scaling mesh:', error);
+      }
     }
-  }, [ref, viewport]);
+  }, [ref, viewport, isMobile]);
 
   useFrame((_state: RootState, delta: number) => {
     const mesh = ref as React.MutableRefObject<Mesh | null>;
-    if (mesh.current && !shaderError) {
+    if (mesh.current) {
       try {
         const material = mesh.current.material as ShaderMaterial & {
           uniforms: SilkUniforms;
         };
-        material.uniforms.uTime.value += 0.1 * delta;
+        if (material.uniforms && material.uniforms.uTime) {
+          material.uniforms.uTime.value += 0.1 * delta;
+        }
       } catch (error) {
-        console.error('Shader runtime error:', error);
-        setShaderError(true);
+        console.error('SilkPlane: Error updating uniforms:', error);
       }
     }
   });
 
   // Choose shader based on device
   const fragmentShader = isMobile ? fragmentShaderMobile : fragmentShaderDesktop;
+  console.log('SilkPlane: Using', isMobile ? 'MOBILE' : 'DESKTOP', 'shader');
 
-  // If shader failed, return null so parent can handle fallback
-  if (shaderError) {
+  try {
+    return (
+      <mesh ref={ref}>
+        <planeGeometry args={[1, 1, 1, 1]} />
+        <shaderMaterial
+          uniforms={uniforms}
+          vertexShader={vertexShader}
+          fragmentShader={fragmentShader}
+        />
+      </mesh>
+    );
+  } catch (error) {
+    console.error('SilkPlane: Error creating mesh:', error);
     return null;
   }
-
-  return (
-    <mesh ref={ref}>
-      <planeGeometry args={[1, 1, 1, 1]} />
-      <shaderMaterial
-        uniforms={uniforms}
-        vertexShader={vertexShader}
-        fragmentShader={fragmentShader}
-      />
-    </mesh>
-  );
 });
 SilkPlane.displayName = "SilkPlane";
 
@@ -206,21 +252,23 @@ const Silk: React.FC<SilkProps> = ({
   children,
 }) => {
   const meshRef = useRef<Mesh>(null);
-  const [webglFailed, setWebglFailed] = useState(false);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
-  const [shaderTimeout, setShaderTimeout] = useState(false);
+  const [webGLSupported, setWebGLSupported] = useState(true);
+  const [canvasError, setCanvasError] = useState(false);
 
   useEffect(() => {
-    setIsMobileDevice(isMobile());
+    const mobile = isMobile();
+    const webGLAvailable = hasWebGLSupport();
     
-    // On mobile, set a timeout to fall back if shader doesn't work within 2 seconds
-    if (isMobile()) {
-      const timer = setTimeout(() => {
-        console.log('Mobile shader timeout - falling back to CSS');
-        setShaderTimeout(true);
-      }, 2000);
-      
-      return () => clearTimeout(timer);
+    setIsMobileDevice(mobile);
+    setWebGLSupported(webGLAvailable);
+    
+    console.log('Silk: Device detected as mobile:', mobile);
+    console.log('Silk: WebGL supported:', webGLAvailable);
+    console.log('Silk: User agent:', typeof window !== 'undefined' ? navigator.userAgent : 'server');
+    
+    if (!webGLAvailable) {
+      console.warn('Silk: WebGL not supported, falling back to CSS background');
     }
   }, []);
 
@@ -236,55 +284,15 @@ const Silk: React.FC<SilkProps> = ({
     [speed, scale, noiseIntensity, color, rotation]
   );
 
-  // CSS fallback background for when WebGL actually fails
-  const fallbackStyle = {
-    background: `
-      radial-gradient(ellipse at 20% 50%, ${color}44 0%, ${color} 40%),
-      radial-gradient(ellipse at 80% 50%, ${color}33 0%, ${color} 40%),
-      linear-gradient(135deg, ${color}22 0%, ${color} 100%)
-    `,
-    backgroundSize: '400% 400%, 300% 300%, 100% 100%',
-    backgroundPosition: '0% 50%, 100% 50%, 0% 0%',
-    animation: `silkMobile 12s ease-in-out infinite`,
+  // Error handler for Canvas
+  const handleCanvasError = (error: any) => {
+    console.error('Silk: Canvas error occurred:', error);
+    setCanvasError(true);
   };
 
-  // Use fallback if WebGL failed, shader timed out, or error occurred
-  if (webglFailed || (isMobileDevice && shaderTimeout)) {
-    return (
-      <>
-        <style dangerouslySetInnerHTML={{
-          __html: `
-            @keyframes silkMobile {
-              0%, 100% { 
-                background-position: 0% 50%, 100% 50%, 0% 0%; 
-              }
-              33% { 
-                background-position: 50% 0%, 50% 100%, 10% 10%; 
-              }
-              66% { 
-                background-position: 100% 50%, 0% 50%, 20% 0%; 
-              }
-            }
-          `
-        }} />
-        <div 
-          className={`relative ${className}`}
-          style={{ 
-            width: '100%', 
-            height: '100%',
-            minHeight: 'inherit',
-            backgroundColor: color,
-            ...fallbackStyle
-          }}
-        >
-          {children && (
-            <div className="relative z-10">
-              {children}
-            </div>
-          )}
-        </div>
-      </>
-    );
+  // If WebGL is not supported or Canvas failed, use CSS fallback
+  if (!webGLSupported || canvasError) {
+    return <CSSFallback color={color} className={className}>{children}</CSSFallback>;
   }
 
   return (
@@ -297,10 +305,9 @@ const Silk: React.FC<SilkProps> = ({
       }}
     >
       <Canvas 
-        dpr={isMobileDevice ? [1, 1.5] : [1, 2]} 
+        dpr={isMobileDevice ? [1, 1] : [1, 2]} 
         frameloop="always"
         camera={{ position: [0, 0, 5], fov: 75 }}
-        performance={{ min: 0.5 }}
         style={{ 
           position: 'absolute',
           top: 0,
@@ -309,16 +316,9 @@ const Silk: React.FC<SilkProps> = ({
           height: '100%',
           zIndex: 0
         }}
-        onError={() => {
-          console.log('Canvas error - falling back to CSS');
-          setWebglFailed(true);
-        }}
-        onCreated={() => {
-          console.log('Silk Canvas created successfully!');
-          if (isMobileDevice) {
-            setShaderTimeout(false); // Cancel timeout if shader loaded
-          }
-        }}
+        onCreated={() => console.log('Silk: Canvas created, mobile:', isMobileDevice)}
+        onError={handleCanvasError}
+        fallback={<CSSFallback color={color} className={className}>{children}</CSSFallback>}
       >
         <SilkPlane ref={meshRef} uniforms={uniforms} isMobile={isMobileDevice} />
       </Canvas>
