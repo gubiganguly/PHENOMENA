@@ -58,44 +58,25 @@ void main() {
 }
 `;
 
-// Simplified mobile-friendly fragment shader
+// Ultra-simple mobile shader that can't fail
 const fragmentShaderMobile = `
 #ifdef GL_ES
-precision mediump float;
+precision lowp float;
 #endif
 
 varying vec2 vUv;
-varying vec3 vPosition;
 
 uniform float uTime;
 uniform vec3 uColor;
 uniform float uSpeed;
-uniform float uScale;
-uniform float uRotation;
-uniform float uNoiseIntensity;
-
-// Simplified noise function for mobile
-float simpleNoise(vec2 st) {
-    return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
-}
 
 void main() {
-    vec2 uv = vUv * uScale;
-    float time = uTime * uSpeed * 0.1;
+    // Super simple animated pattern
+    float time = uTime * uSpeed * 0.05;
+    float wave = sin(vUv.x * 6.0 + time) * sin(vUv.y * 4.0 + time * 0.7);
+    float intensity = 0.8 + wave * 0.2;
     
-    // Simple wave pattern - mobile friendly
-    float wave1 = sin(uv.x * 3.0 + time) * 0.5 + 0.5;
-    float wave2 = sin(uv.y * 2.0 + time * 0.7) * 0.5 + 0.5;
-    
-    // Combine waves
-    float pattern = wave1 * wave2;
-    
-    // Add simple noise
-    float noise = simpleNoise(uv + time * 0.1) * uNoiseIntensity * 0.1;
-    
-    // Final color
-    vec3 color = uColor * (0.7 + pattern * 0.3 + noise);
-    
+    vec3 color = uColor * intensity;
     gl_FragColor = vec4(color, 1.0);
 }
 `;
@@ -160,6 +141,7 @@ const SilkPlane = forwardRef<Mesh, SilkPlaneProps>(function SilkPlane(
   ref
 ) {
   const { viewport } = useThree();
+  const [shaderError, setShaderError] = useState(false);
 
   useLayoutEffect(() => {
     const mesh = ref as React.MutableRefObject<Mesh | null>;
@@ -170,16 +152,26 @@ const SilkPlane = forwardRef<Mesh, SilkPlaneProps>(function SilkPlane(
 
   useFrame((_state: RootState, delta: number) => {
     const mesh = ref as React.MutableRefObject<Mesh | null>;
-    if (mesh.current) {
-      const material = mesh.current.material as ShaderMaterial & {
-        uniforms: SilkUniforms;
-      };
-      material.uniforms.uTime.value += 0.1 * delta;
+    if (mesh.current && !shaderError) {
+      try {
+        const material = mesh.current.material as ShaderMaterial & {
+          uniforms: SilkUniforms;
+        };
+        material.uniforms.uTime.value += 0.1 * delta;
+      } catch (error) {
+        console.error('Shader runtime error:', error);
+        setShaderError(true);
+      }
     }
   });
 
   // Choose shader based on device
   const fragmentShader = isMobile ? fragmentShaderMobile : fragmentShaderDesktop;
+
+  // If shader failed, return null so parent can handle fallback
+  if (shaderError) {
+    return null;
+  }
 
   return (
     <mesh ref={ref}>
@@ -216,9 +208,20 @@ const Silk: React.FC<SilkProps> = ({
   const meshRef = useRef<Mesh>(null);
   const [webglFailed, setWebglFailed] = useState(false);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const [shaderTimeout, setShaderTimeout] = useState(false);
 
   useEffect(() => {
     setIsMobileDevice(isMobile());
+    
+    // On mobile, set a timeout to fall back if shader doesn't work within 2 seconds
+    if (isMobile()) {
+      const timer = setTimeout(() => {
+        console.log('Mobile shader timeout - falling back to CSS');
+        setShaderTimeout(true);
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   const uniforms = useMemo<SilkUniforms>(
@@ -245,8 +248,8 @@ const Silk: React.FC<SilkProps> = ({
     animation: `silkMobile 12s ease-in-out infinite`,
   };
 
-  // Only use fallback if WebGL actually failed, not just because it's mobile
-  if (webglFailed) {
+  // Use fallback if WebGL failed, shader timed out, or error occurred
+  if (webglFailed || (isMobileDevice && shaderTimeout)) {
     return (
       <>
         <style dangerouslySetInnerHTML={{
@@ -306,8 +309,16 @@ const Silk: React.FC<SilkProps> = ({
           height: '100%',
           zIndex: 0
         }}
-        onError={() => setWebglFailed(true)}
-        onCreated={() => console.log('Silk Canvas created successfully on mobile!')}
+        onError={() => {
+          console.log('Canvas error - falling back to CSS');
+          setWebglFailed(true);
+        }}
+        onCreated={() => {
+          console.log('Silk Canvas created successfully!');
+          if (isMobileDevice) {
+            setShaderTimeout(false); // Cancel timeout if shader loaded
+          }
+        }}
       >
         <SilkPlane ref={meshRef} uniforms={uniforms} isMobile={isMobileDevice} />
       </Canvas>
