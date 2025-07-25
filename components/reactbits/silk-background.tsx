@@ -1,4 +1,5 @@
-import React, { forwardRef, useMemo, useRef, useLayoutEffect, useState, useEffect } from "react";
+/* eslint-disable react/no-unknown-property */
+import React, { forwardRef, useMemo, useRef, useLayoutEffect } from "react";
 import { Canvas, useFrame, useThree, RootState } from "@react-three/fiber";
 import { Color, Mesh, ShaderMaterial } from "three";
 import { IUniform } from "three";
@@ -70,15 +71,18 @@ void main() {
   vec2  tex        = uv * uScale;
   float tOffset    = uSpeed * uTime;
 
-  tex.y += 0.03 * sin(8.0 * tex.x - tOffset);
+  tex.y += 0.1 * sin(8.0 * tex.x - tOffset);
 
-  float pattern = 0.6 +
-                  0.4 * sin(5.0 * (tex.x + tex.y +
-                                   cos(3.0 * tex.x + 5.0 * tex.y) +
-                                   0.02 * tOffset) +
-                           sin(20.0 * (tex.x + tex.y - 0.1 * tOffset)));
+  float pattern = 0.3 +
+                  0.7 * sin(3.0 * (tex.x + tex.y +
+                                   cos(2.0 * tex.x + 3.0 * tex.y) +
+                                   0.05 * tOffset) +
+                           sin(15.0 * (tex.x + tex.y - 0.2 * tOffset)));
 
-  vec4 col = vec4(uColor, 1.0) * vec4(pattern) - rnd / 15.0 * uNoiseIntensity;
+  // Add more contrast and variation
+  pattern = pow(pattern, 0.8);
+  
+  vec4 col = vec4(uColor, 1.0) * vec4(pattern) + rnd / 8.0 * uNoiseIntensity;
   col.a = 1.0;
   gl_FragColor = col;
 }
@@ -103,14 +107,11 @@ const SilkPlane = forwardRef<Mesh, SilkPlaneProps>(function SilkPlane(
 
   useFrame((_state: RootState, delta: number) => {
     const mesh = ref as React.MutableRefObject<Mesh | null>;
-    if (mesh.current && mesh.current.material) {
-      const material = mesh.current.material as ShaderMaterial;
-      if (material.uniforms && material.uniforms.uTime) {
-        // Increase animation speed and add console log for debugging
-        material.uniforms.uTime.value += delta * 2.0;
-        // Remove this console.log after confirming animation works
-        // console.log('Animation time:', material.uniforms.uTime.value);
-      }
+    if (mesh.current) {
+      const material = mesh.current.material as ShaderMaterial & {
+        uniforms: SilkUniforms;
+      };
+      material.uniforms.uTime.value += 0.1 * delta;
     }
   });
 
@@ -140,14 +141,13 @@ export interface SilkProps {
 const Silk: React.FC<SilkProps> = ({
   speed = 5,
   scale = 1,
-  color = "#7B7481",
+  color = "#000000",
   noiseIntensity = 1.5,
   rotation = 0,
   className = "",
   children,
 }) => {
   const meshRef = useRef<Mesh>(null);
-  const [webglSupported, setWebglSupported] = useState(true);
 
   const uniforms = useMemo<SilkUniforms>(
     () => ({
@@ -161,42 +161,35 @@ const Silk: React.FC<SilkProps> = ({
     [speed, scale, noiseIntensity, color, rotation]
   );
 
-  // Check WebGL support
-  useEffect(() => {
-    const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-    setWebglSupported(!!gl);
-  }, []);
-
   return (
-    <div className={`relative ${className}`}>
-      <div className="absolute inset-0">
-        {webglSupported ? (
-          <Canvas 
-            dpr={[1, 1.5]} 
-            frameloop="always"
-            gl={{ 
-              antialias: false,
-              alpha: true,
-              powerPreference: "default",
-              failIfMajorPerformanceCaveat: false
-            }}
-            onCreated={({ gl }) => {
-              // Fallback if WebGL context creation fails
-              if (!gl) {
-                setWebglSupported(false);
-              }
-            }}
-          >
-            <SilkPlane ref={meshRef} uniforms={uniforms} />
-          </Canvas>
-        ) : (
-          // Fallback for devices without WebGL support
-          <div className="w-full h-full bg-gradient-to-br from-gray-900 via-black to-gray-800" />
-        )}
-      </div>
+    <div 
+      className={`relative ${className}`}
+      style={{ 
+        width: '100%', 
+        height: '100%',
+        minHeight: 'inherit'
+      }}
+    >
+      <Canvas 
+        dpr={[1, 2]} 
+        frameloop="always"
+        camera={{ position: [0, 0, 5], fov: 75 }}
+        style={{ 
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%', 
+          height: '100%',
+          zIndex: 0
+        }}
+      >
+        <SilkPlane ref={meshRef} uniforms={uniforms} />
+      </Canvas>
       {children && (
-        <div className="relative z-10">
+        <div 
+          className="relative" 
+          style={{ zIndex: 10 }}
+        >
           {children}
         </div>
       )}
@@ -204,5 +197,5 @@ const Silk: React.FC<SilkProps> = ({
   );
 };
 
-export { Silk };
-export default Silk; 
+export default Silk;
+export { Silk }; 
