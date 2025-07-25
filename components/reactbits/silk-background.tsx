@@ -167,11 +167,10 @@ const Silk: React.FC<SilkProps> = ({
   children,
 }) => {
   const meshRef = useRef<Mesh>(null);
-  const [canUseWebGL, setCanUseWebGL] = useState(true);
+  const [webglFailed, setWebglFailed] = useState(false);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
 
   useEffect(() => {
-    setCanUseWebGL(hasWebGLSupport());
     setIsMobileDevice(isMobile());
   }, []);
 
@@ -187,7 +186,7 @@ const Silk: React.FC<SilkProps> = ({
     [speed, scale, noiseIntensity, color, rotation]
   );
 
-  // CSS fallback background for mobile or when WebGL isn't supported
+  // CSS fallback background for when WebGL actually fails
   const fallbackStyle = {
     background: `
       radial-gradient(ellipse at 20% 50%, ${color}44 0%, ${color} 40%),
@@ -199,8 +198,8 @@ const Silk: React.FC<SilkProps> = ({
     animation: `silkMobile 12s ease-in-out infinite`,
   };
 
-  // Fallback for mobile or no WebGL support
-  if (isMobileDevice || !canUseWebGL) {
+  // Only use fallback if WebGL actually failed, not just because it's mobile
+  if (webglFailed) {
     return (
       <>
         <style dangerouslySetInnerHTML={{
@@ -260,7 +259,8 @@ const Silk: React.FC<SilkProps> = ({
           height: '100%',
           zIndex: 0
         }}
-        onError={() => setCanUseWebGL(false)}
+        onError={() => setWebglFailed(true)}
+        onCreated={() => console.log('Silk Canvas created successfully on mobile!')}
       >
         <SilkPlane ref={meshRef} uniforms={uniforms} />
       </Canvas>
