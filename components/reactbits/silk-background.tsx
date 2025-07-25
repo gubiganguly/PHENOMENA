@@ -58,7 +58,50 @@ void main() {
 }
 `;
 
-const fragmentShader = `
+// Simplified mobile-friendly fragment shader
+const fragmentShaderMobile = `
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+varying vec2 vUv;
+varying vec3 vPosition;
+
+uniform float uTime;
+uniform vec3 uColor;
+uniform float uSpeed;
+uniform float uScale;
+uniform float uRotation;
+uniform float uNoiseIntensity;
+
+// Simplified noise function for mobile
+float simpleNoise(vec2 st) {
+    return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
+}
+
+void main() {
+    vec2 uv = vUv * uScale;
+    float time = uTime * uSpeed * 0.1;
+    
+    // Simple wave pattern - mobile friendly
+    float wave1 = sin(uv.x * 3.0 + time) * 0.5 + 0.5;
+    float wave2 = sin(uv.y * 2.0 + time * 0.7) * 0.5 + 0.5;
+    
+    // Combine waves
+    float pattern = wave1 * wave2;
+    
+    // Add simple noise
+    float noise = simpleNoise(uv + time * 0.1) * uNoiseIntensity * 0.1;
+    
+    // Final color
+    vec3 color = uColor * (0.7 + pattern * 0.3 + noise);
+    
+    gl_FragColor = vec4(color, 1.0);
+}
+`;
+
+// Complex desktop fragment shader
+const fragmentShaderDesktop = `
 varying vec2 vUv;
 varying vec3 vPosition;
 
@@ -109,10 +152,11 @@ void main() {
 
 interface SilkPlaneProps {
   uniforms: SilkUniforms;
+  isMobile?: boolean;
 }
 
 const SilkPlane = forwardRef<Mesh, SilkPlaneProps>(function SilkPlane(
-  { uniforms },
+  { uniforms, isMobile = false },
   ref
 ) {
   const { viewport } = useThree();
@@ -133,6 +177,9 @@ const SilkPlane = forwardRef<Mesh, SilkPlaneProps>(function SilkPlane(
       material.uniforms.uTime.value += 0.1 * delta;
     }
   });
+
+  // Choose shader based on device
+  const fragmentShader = isMobile ? fragmentShaderMobile : fragmentShaderDesktop;
 
   return (
     <mesh ref={ref}>
@@ -262,7 +309,7 @@ const Silk: React.FC<SilkProps> = ({
         onError={() => setWebglFailed(true)}
         onCreated={() => console.log('Silk Canvas created successfully on mobile!')}
       >
-        <SilkPlane ref={meshRef} uniforms={uniforms} />
+        <SilkPlane ref={meshRef} uniforms={uniforms} isMobile={isMobileDevice} />
       </Canvas>
       {children && (
         <div 
