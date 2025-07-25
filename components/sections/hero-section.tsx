@@ -12,14 +12,20 @@ const brandLogos = [
 export function HeroSection() {
   return (
     <div className="relative min-h-screen">
-      <Silk 
-        speed={2}
-        scale={1}
-        color="#111111"
-        noiseIntensity={1}
-        rotation={0}
-        className="min-h-screen flex flex-col justify-center items-center pt-8 sm:pt-12 md:pt-20 pb-0"
-      >
+      {/* Silk background covering the full hero section */}
+      <div className="absolute inset-0">
+        <Silk 
+          speed={2}
+          scale={1}
+          color="#111111"
+          noiseIntensity={1}
+          rotation={0}
+          className="w-full h-full"
+        />
+      </div>
+
+      {/* Content layer */}
+      <div className="relative z-10 min-h-screen flex flex-col justify-center items-center pt-8 sm:pt-12 md:pt-20 pb-0">
         {/* Main content container - centered in the full section */}
         <div className="flex flex-col items-center text-center space-y-8 sm:space-y-12 md:space-y-16 px-4 sm:px-6 md:px-8">
           {/* Main title */}
@@ -56,7 +62,7 @@ export function HeroSection() {
             />
           </motion.div>
         </div>
-      </Silk>
+      </div>
 
       {/* Scrolling brand logos - positioned slightly above the bottom */}
       <motion.div
