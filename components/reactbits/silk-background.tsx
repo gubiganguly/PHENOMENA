@@ -1,5 +1,5 @@
 /* eslint-disable react/no-unknown-property */
-import React, { forwardRef, useMemo, useRef, useLayoutEffect } from "react";
+import React, { forwardRef, useMemo, useRef, useLayoutEffect, useState, useEffect } from "react";
 import { Canvas, useFrame, useThree, RootState } from "@react-three/fiber";
 import { Color, Mesh, ShaderMaterial } from "three";
 import { IUniform } from "three";
@@ -12,6 +12,25 @@ const hexToNormalizedRGB = (hex: string): NormalizedRGB => {
   const g = parseInt(clean.slice(2, 4), 16) / 255;
   const b = parseInt(clean.slice(4, 6), 16) / 255;
   return [r, g, b];
+};
+
+// Mobile detection
+const isMobile = () => {
+  if (typeof window === 'undefined') return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+};
+
+// WebGL support detection
+const hasWebGLSupport = () => {
+  if (typeof window === 'undefined') return false;
+  try {
+    const canvas = document.createElement('canvas');
+    return !!(window.WebGLRenderingContext && (
+      canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
+    ));
+  } catch (e) {
+    return false;
+  }
 };
 
 interface UniformValue<T = number | Color> {
@@ -148,6 +167,13 @@ const Silk: React.FC<SilkProps> = ({
   children,
 }) => {
   const meshRef = useRef<Mesh>(null);
+  const [canUseWebGL, setCanUseWebGL] = useState(true);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
+
+  useEffect(() => {
+    setCanUseWebGL(hasWebGLSupport());
+    setIsMobileDevice(isMobile());
+  }, []);
 
   const uniforms = useMemo<SilkUniforms>(
     () => ({
@@ -161,6 +187,57 @@ const Silk: React.FC<SilkProps> = ({
     [speed, scale, noiseIntensity, color, rotation]
   );
 
+  // CSS fallback background for mobile or when WebGL isn't supported
+  const fallbackStyle = {
+    background: `
+      radial-gradient(ellipse at 20% 50%, ${color}44 0%, ${color} 40%),
+      radial-gradient(ellipse at 80% 50%, ${color}33 0%, ${color} 40%),
+      linear-gradient(135deg, ${color}22 0%, ${color} 100%)
+    `,
+    backgroundSize: '400% 400%, 300% 300%, 100% 100%',
+    backgroundPosition: '0% 50%, 100% 50%, 0% 0%',
+    animation: `silkMobile 12s ease-in-out infinite`,
+  };
+
+  // Fallback for mobile or no WebGL support
+  if (isMobileDevice || !canUseWebGL) {
+    return (
+      <>
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            @keyframes silkMobile {
+              0%, 100% { 
+                background-position: 0% 50%, 100% 50%, 0% 0%; 
+              }
+              33% { 
+                background-position: 50% 0%, 50% 100%, 10% 10%; 
+              }
+              66% { 
+                background-position: 100% 50%, 0% 50%, 20% 0%; 
+              }
+            }
+          `
+        }} />
+        <div 
+          className={`relative ${className}`}
+          style={{ 
+            width: '100%', 
+            height: '100%',
+            minHeight: 'inherit',
+            backgroundColor: color,
+            ...fallbackStyle
+          }}
+        >
+          {children && (
+            <div className="relative z-10">
+              {children}
+            </div>
+          )}
+        </div>
+      </>
+    );
+  }
+
   return (
     <div 
       className={`relative ${className}`}
@@ -171,9 +248,10 @@ const Silk: React.FC<SilkProps> = ({
       }}
     >
       <Canvas 
-        dpr={[1, 2]} 
+        dpr={isMobileDevice ? [1, 1.5] : [1, 2]} 
         frameloop="always"
         camera={{ position: [0, 0, 5], fov: 75 }}
+        performance={{ min: 0.5 }}
         style={{ 
           position: 'absolute',
           top: 0,
@@ -182,6 +260,7 @@ const Silk: React.FC<SilkProps> = ({
           height: '100%',
           zIndex: 0
         }}
+        onError={() => setCanUseWebGL(false)}
       >
         <SilkPlane ref={meshRef} uniforms={uniforms} />
       </Canvas>
