@@ -1,4 +1,4 @@
-import React, { forwardRef, useMemo, useRef, useLayoutEffect } from "react";
+import React, { forwardRef, useMemo, useRef, useLayoutEffect, useState, useEffect } from "react";
 import { Canvas, useFrame, useThree, RootState } from "@react-three/fiber";
 import { Color, Mesh, ShaderMaterial } from "three";
 import { IUniform } from "three";
@@ -147,6 +147,7 @@ const Silk: React.FC<SilkProps> = ({
   children,
 }) => {
   const meshRef = useRef<Mesh>(null);
+  const [webglSupported, setWebglSupported] = useState(true);
 
   const uniforms = useMemo<SilkUniforms>(
     () => ({
@@ -160,20 +161,39 @@ const Silk: React.FC<SilkProps> = ({
     [speed, scale, noiseIntensity, color, rotation]
   );
 
+  // Check WebGL support
+  useEffect(() => {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    setWebglSupported(!!gl);
+  }, []);
+
   return (
     <div className={`relative ${className}`}>
       <div className="absolute inset-0">
-        <Canvas 
-          dpr={[1, 2]} 
-          frameloop="always"
-          gl={{ 
-            antialias: true,
-            alpha: true,
-            powerPreference: "high-performance"
-          }}
-        >
-          <SilkPlane ref={meshRef} uniforms={uniforms} />
-        </Canvas>
+        {webglSupported ? (
+          <Canvas 
+            dpr={[1, 1.5]} 
+            frameloop="always"
+            gl={{ 
+              antialias: false,
+              alpha: true,
+              powerPreference: "default",
+              failIfMajorPerformanceCaveat: false
+            }}
+            onCreated={({ gl }) => {
+              // Fallback if WebGL context creation fails
+              if (!gl) {
+                setWebglSupported(false);
+              }
+            }}
+          >
+            <SilkPlane ref={meshRef} uniforms={uniforms} />
+          </Canvas>
+        ) : (
+          // Fallback for devices without WebGL support
+          <div className="w-full h-full bg-gradient-to-br from-gray-900 via-black to-gray-800" />
+        )}
       </div>
       {children && (
         <div className="relative z-10">

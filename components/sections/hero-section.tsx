@@ -14,14 +14,20 @@ export function HeroSection() {
     <div className="relative min-h-screen">
       {/* Silk background covering the full hero section */}
       <div className="absolute inset-0">
-        <Silk 
-          speed={2}
-          scale={1}
-          color="#111111"
-          noiseIntensity={1}
-          rotation={0}
-          className="w-full h-full"
-        />
+        {/* Fallback background for mobile/devices that don't support WebGL */}
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-800"></div>
+        
+        {/* Silk background with mobile optimizations */}
+        <div className="absolute inset-0">
+          <Silk 
+            speed={2}
+            scale={1}
+            color="#111111"
+            noiseIntensity={1}
+            rotation={0}
+            className="w-full h-full"
+          />
+        </div>
       </div>
 
       {/* Content layer */}
