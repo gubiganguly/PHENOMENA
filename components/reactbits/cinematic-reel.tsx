@@ -10,9 +10,13 @@ interface CinematicReelProps {
 
 const reelImages = [
   "/reel/image1.jpeg",
+  "/reel/image7.jpeg",
   "/reel/image2.jpeg",
+  "/reel/image8.jpeg",
   "/reel/image3.jpeg",
+  "/reel/image9.jpeg",
   "/reel/image4.jpeg",
+  "/reel/image10.jpeg",
   "/reel/image5.jpeg",
   "/reel/image6.jpeg",
 ];
