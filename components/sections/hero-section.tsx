@@ -6,7 +6,10 @@ import { ScrollVelocity } from '@/components/reactbits/scroll-velocity';
 import { CountdownTimer } from '@/components/reactbits/countdown-timer';
 
 const brandLogos = [
-  "APPLE", "GOOGLE", "TESLA", "META", "AMAZON", "MICROSOFT", "NVIDIA", "NETFLIX"
+  "MEXICO CITY", "WALL STREET", "HOLLYWOOD", "SILICON VALLEY", 
+  "WASHINGTON DC", "ABU DHABI", "DUBAI", "MIAMI", "SAN SALVADOR", 
+  "BUENOS AIRES", "TOKYO", "HONG KONG", "TAIWAN", "AUSTIN", 
+  "LONDON", "MADRID", "WARSAW", "MUMBAI", "TORONTO", "SEOUL", "BOULDER"
 ];
 
 export function HeroSection() {
@@ -66,7 +69,7 @@ export function HeroSection() {
         className="absolute bottom-4 left-0 right-0 overflow-hidden whitespace-nowrap w-full z-20"
       >
         <div className="w-full">
-          <ScrollVelocity baseVelocity={-2} className="text-xs sm:text-sm md:text-base lg:text-lg font-bold text-white/20 tracking-wider">
+          <ScrollVelocity baseVelocity={-.5} className="text-xs sm:text-sm md:text-base lg:text-lg font-bold text-white/20 tracking-wider">
             {brandLogos.join(" • ")} •
           </ScrollVelocity>
         </div>
